@@ -32,7 +32,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "PR #${{ github.event.number }} from ${{ github.head_ref }}"
+      - run: echo 'PR #${{ github.event.number }} from ${{ github.head_ref }}'
 
   notify-failure:
     needs: build
