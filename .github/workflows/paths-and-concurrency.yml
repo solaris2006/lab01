@@ -1,0 +1,25 @@
+# Run only when certain files change, and cancel outdated runs on the same branch.
+name: Paths filter & concurrency
+
+on:
+  push:
+    paths:
+      - "**.py"
+      - "requirements-dev.txt"
+  pull_request:
+    paths:
+      - "**.py"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-changed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Python files changed in ${{ github.ref_name }}"
+      - name: Simulate slow work (push again quickly to see cancellation)
+        run: sleep 30

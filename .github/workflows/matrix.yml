@@ -1,0 +1,30 @@
+# Matrix strategies: combine dimensions, add/remove combinations, keep going on failure.
+name: Matrix demo
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false        # don't cancel other combos when one fails
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12"]
+        exclude:
+          - os: windows-latest
+            python: "3.11"
+        include:
+          - os: ubuntu-latest
+            python: "3.13"
+            experimental: true
+    continue-on-error: ${{ matrix.experimental == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python greetings.py "${{ matrix.os }}"
+        shell: bash

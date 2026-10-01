@@ -1,0 +1,24 @@
+# Calls the reusable workflow twice and uses its output.
+name: Call reusable workflow
+
+on: [push, workflow_dispatch]
+
+jobs:
+  greet-alice:
+    uses: ./.github/workflows/reusable-greet.yml
+    with:
+      who: alice
+
+  greet-bob:
+    uses: ./.github/workflows/reusable-greet.yml
+    with:
+      who: bob
+    secrets: inherit
+
+  report:
+    needs: [greet-alice, greet-bob]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "${{ needs.greet-alice.outputs.message }}"
+          echo "${{ needs.greet-bob.outputs.message }}"

@@ -1,0 +1,56 @@
+# Environment variables at each scope, secrets, and passing data between steps and jobs.
+name: Env, secrets & outputs
+
+on: [push, workflow_dispatch]
+
+env:
+  GREETING: Hello            # workflow scope
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: world          # job scope
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+    steps:
+      - name: Use env at every level
+        env:
+          PUNCT: "!"         # step scope
+        run: echo "$GREETING, $TARGET$PUNCT"
+
+      - name: Set an env var for later steps
+        run: echo "BUILD_TIME=$(date -u +%FT%TZ)" >> "$GITHUB_ENV"
+
+      - name: Read it back
+        run: echo "Built at $BUILD_TIME"
+
+      - name: Produce step outputs
+        id: meta
+        run: |
+          echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Use a secret (masked in logs)
+        env:
+          MY_SECRET: ${{ secrets.MY_SECRET }}
+        run: |
+          if [ -n "$MY_SECRET" ]; then
+            echo "Secret is set (length ${#MY_SECRET}): $MY_SECRET"
+          else
+            echo "MY_SECRET not configured - add it under Settings > Secrets"
+          fi
+
+      - name: Write a job summary
+        run: |
+          echo "### Build info" >> "$GITHUB_STEP_SUMMARY"
+          echo "- version: \`${{ steps.meta.outputs.version }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  consume:
+    needs: produce
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Version from previous job: ${{ needs.produce.outputs.version }}"
+          echo "Commit: ${{ needs.produce.outputs.short_sha }}"

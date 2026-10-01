@@ -1,0 +1,29 @@
+# Manually triggered workflow with typed inputs (Actions tab > Run workflow).
+name: Manual run
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Who to greet
+        required: true
+        default: world
+      environment:
+        description: Target environment
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+      dry_run:
+        description: Dry run
+        type: boolean
+        default: true
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 greetings.py "${{ inputs.name }}"
+      - run: echo "Env=${{ inputs.environment }} dry_run=${{ inputs.dry_run }}"
+      - if: ${{ !inputs.dry_run }}
+        run: echo "Doing the real thing in ${{ inputs.environment }}"

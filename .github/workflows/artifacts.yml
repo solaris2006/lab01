@@ -1,0 +1,38 @@
+# Share files between jobs with artifacts, and speed things up with a cache.
+name: Artifacts & cache
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: pip-${{ runner.os }}-
+      - name: Build a "package"
+        run: |
+          mkdir -p dist
+          python3 greetings.py builder > dist/output.txt
+          tar czf dist/app.tar.gz greetings.py
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 5
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: |
+          cat dist/output.txt
+          tar tzf dist/app.tar.gz

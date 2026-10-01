@@ -1,1 +1,7 @@
 .git-lab-secret
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+.secrets

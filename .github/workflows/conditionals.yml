@@ -1,0 +1,51 @@
+# Job dependencies (needs), `if:` conditions and status functions.
+name: Conditionals & dependencies
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      should_fail:
+        description: Make the build job fail
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Building..."
+      - name: Optional failure
+        if: ${{ inputs.should_fail }}
+        run: exit 1
+
+  deploy:
+    needs: build
+    # Only on pushes to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploying ${{ github.sha }}"
+
+  pr-only:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "PR #${{ github.event.number }} from ${{ github.head_ref }}"
+
+  notify-failure:
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Build failed!"
+
+  cleanup:
+    needs: [build, deploy]
+    if: always()           # runs even if earlier jobs failed or were skipped
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "build:  ${{ needs.build.result }}"
+          echo "deploy: ${{ needs.deploy.result }}"
